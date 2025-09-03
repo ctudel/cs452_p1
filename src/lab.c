@@ -1,13 +1,11 @@
 #include "lab.h"
 #include <stdio.h>
 #include <stdlib.h>
-
 /*
- * ==========================
- * HELPER FUNCTIONS AND TYPES
- * ==========================
+ * =====
+ * TYPES
+ * =====
  */
-
 typedef struct Node {
   struct Node *next, *prev;
 } Node;
@@ -28,18 +26,17 @@ typedef struct List {
 } List;
 
 /*
+ * ================
+ * HELPER FUNCTIONS
+ * ================
+ */
+
+/*
  * TODO: Document
  */
-void free_list_or_element(void *data_ptr) {
+void free_element(void *data_ptr) {
   Node *node = (Node *)data_ptr;
-
-  // Only clean tail if specified
-  if (node->next != node) { // handles double free
-    free(node->next);
-  }
-
   free(node);
-  node = node->next = node->prev = NULL;
 }
 
 /*
@@ -57,11 +54,10 @@ List *sentinel_list_create(void) {
   // Sentinel node will always be the head -- we want tail on the first appended
   // element later
   Node *sentinelNode = malloc(sizeof(Node));
-  sentinelNode->next = sentinelNode;
-  sentinelNode->prev = sentinelNode;
-
-  list->lists.sentinel_list->head = sentinelNode;
-  list->lists.sentinel_list->tail = sentinelNode;
+  // Sets all meta data pointers to sentinel node initially
+  sentinelNode->next = sentinelNode->prev = list->lists.sentinel_list->head =
+      list->lists.sentinel_list->tail = sentinelNode;
+  // Sentinel node should not count toward size
   list->lists.sentinel_list->size = 0;
 
   return list;
@@ -72,21 +68,15 @@ void sentinel_list_destroy(List *list, FreeFunc free_func) {
 
   // User must pass (non-null) FreeFunc to destroy
   if (free_func) {
+    // we eventually get rid of all tails, so avoid derferencing NULL pointer
     Node *currNode = sentinel_list->tail;
+    Node *nextNode = currNode->prev;
 
-    // NOTE: the current tail should free first, along with each current node,
-    // so freeing prev is not necessary (different from setting to NULL)
     while (currNode != NULL) {
-      // Shift tail
-      sentinel_list->tail = currNode->prev;
-      // Cleanup previous tail (prev will free itself next loop)
-      free_func(currNode);
-      // Reduce size
-      sentinel_list->size = list_size(list) - 1;
-      // Update current node to a different node (not itself)
-      currNode = (currNode == list->lists.sentinel_list->tail)
-                     ? NULL
-                     : list->lists.sentinel_list->tail;
+      free_func(currNode);                       // frees current tail
+      sentinel_list->size = list_size(list) - 1; // Reduce size
+      // Update currNode if its does not point to itself
+      currNode = (currNode == nextNode) ? NULL : nextNode;
     }
 
     // Finally cleanup lists
@@ -95,6 +85,25 @@ void sentinel_list_destroy(List *list, FreeFunc free_func) {
     free(list);
     list = NULL;
   }
+}
+
+bool sentinel_list_append(SentinelLinkedList *sentinel_list, void *data) {
+  Node *currTail = sentinel_list->tail;
+  Node *newTail = (Node *)data;
+
+  // Previous Tail <---> New Tail
+  currTail->next = newTail;
+  newTail->prev = currTail;
+
+  // Sentinel <---> New Tail
+  newTail->next = sentinel_list->head;
+  sentinel_list->head->prev = newTail;
+
+  // Update tail and list data
+  sentinel_list->tail = newTail;
+  sentinel_list->size += 1;
+
+  return newTail == sentinel_list->tail;
 }
 
 size_t sentinel_list_size(SentinelLinkedList *sentinel_list) {
@@ -108,16 +117,12 @@ size_t sentinel_list_size(SentinelLinkedList *sentinel_list) {
  */
 
 List *list_create(ListType type) {
-  List *list;
+  List *list = NULL; // could remain null
 
   // List can have multiple implementations -- find by type
   switch (type) {
   case LIST_LINKED_SENTINEL:
     list = sentinel_list_create();
-    break;
-
-  default:
-    list = NULL;
     break;
   }
 
@@ -128,10 +133,6 @@ void list_destroy(List *list, FreeFunc free_func) {
   switch (list->type) {
   case LIST_LINKED_SENTINEL:
     sentinel_list_destroy(list, free_func);
-    break;
-  default:
-
-    break;
   }
 }
 
@@ -139,10 +140,12 @@ size_t list_size(const List *list) {
   switch (list->type) {
   case LIST_LINKED_SENTINEL:
     return sentinel_list_size(list->lists.sentinel_list);
-    break;
-
-  default:
-    return -1;
-    break;
   }
 };
+
+bool list_append(List *list, void *data) {
+  switch (list->type) {
+  case LIST_LINKED_SENTINEL:
+    return sentinel_list_append(list->lists.sentinel_list, data);
+  }
+}
