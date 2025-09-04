@@ -55,8 +55,9 @@ List *sentinel_list_create(void) {
   // element later
   Node *sentinelNode = malloc(sizeof(Node));
   // Sets all meta data pointers to sentinel node initially
-  sentinelNode->next = sentinelNode->prev = list->lists.sentinel_list->head =
-      list->lists.sentinel_list->tail = sentinelNode;
+  list->lists.sentinel_list->head = list->lists.sentinel_list->tail =
+      sentinelNode->next = sentinelNode->prev = sentinelNode;
+
   // Sentinel node should not count toward size
   list->lists.sentinel_list->size = 0;
 
@@ -66,17 +67,20 @@ List *sentinel_list_create(void) {
 void sentinel_list_destroy(List *list, FreeFunc free_func) {
   SentinelLinkedList *sentinel_list = list->lists.sentinel_list;
 
-  // User must pass (non-null) FreeFunc to destroy
+  // User must pass (non-null) FreeFunc to destroy list
   if (free_func) {
-    // we eventually get rid of all tails, so avoid derferencing NULL pointer
-    Node *currNode = sentinel_list->tail;
-    Node *nextNode = currNode->prev;
+    Node *sentinelNode = sentinel_list->head;
+    Node *currNode = sentinelNode;
+    Node *nextNode = currNode->next;
 
     while (currNode != NULL) {
-      free_func(currNode);                       // frees current tail
-      sentinel_list->size = list_size(list) - 1; // Reduce size
-      // Update currNode if its does not point to itself
-      currNode = (currNode == nextNode) ? NULL : nextNode;
+      free_func(currNode);
+      // Reduce size
+      sentinel_list->size = list_size(list) - 1;
+      // Update currNode until loops back to sentinel node
+      currNode = (nextNode == sentinelNode) ? NULL : nextNode;
+      // Update next node
+      nextNode = (currNode) ? currNode->next : NULL;
     }
 
     // Finally cleanup lists
@@ -136,6 +140,13 @@ void list_destroy(List *list, FreeFunc free_func) {
   }
 }
 
+bool list_append(List *list, void *data) {
+  switch (list->type) {
+  case LIST_LINKED_SENTINEL:
+    return sentinel_list_append(list->lists.sentinel_list, data);
+  }
+}
+
 size_t list_size(const List *list) {
   switch (list->type) {
   case LIST_LINKED_SENTINEL:
@@ -143,9 +154,9 @@ size_t list_size(const List *list) {
   }
 };
 
-bool list_append(List *list, void *data) {
+bool list_is_empty(const List *list) {
   switch (list->type) {
   case LIST_LINKED_SENTINEL:
-    return sentinel_list_append(list->lists.sentinel_list, data);
+    return list->lists.sentinel_list->size == 0;
   }
-}
+};
