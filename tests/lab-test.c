@@ -41,11 +41,11 @@ void test_list_create(void) {
   TEST_ASSERT_NOT_NULL(sentinel_list_ptr->tail);
   TEST_ASSERT_EQUAL(sentinel_list_ptr->head, sentinel_list_ptr->tail);
 
-  // Clean up -- directly free to avoid premature stacktraces
-  // (testing destroy separately)
-  free(list->lists.sentinel_list->head); // should also free the tail
+  // Free manually to avoid premature stacktraces (tests destroy separately)
+  free(list->lists.sentinel_list->head); // frees sentinel
   free(list->lists.sentinel_list);
   free(list);
+  sentinel_list_ptr = NULL;
   list = NULL;
 }
 
@@ -65,21 +65,28 @@ void test_append(void) {
   Node *newNode = malloc(sizeof(Node));
   Node *newNode2 = malloc(sizeof(Node));
 
+  // Append an item
   bool item_appended = list_append(list, newNode);
-  bool item_appended2 = list_append(list, newNode2);
-
   TEST_ASSERT_TRUE(item_appended);
   // Check node addresses are different
   TEST_ASSERT_NOT_EQUAL(sentinel_list->head, sentinel_list->tail);
   // Sentinel -> New node
-  // TEST_ASSERT_EQUAL(sentinel_list->head->next, sentinel_list->tail);
+  TEST_ASSERT_EQUAL(sentinel_list->head->next, sentinel_list->tail);
+  TEST_ASSERT_EQUAL(sentinel_list->head->prev, sentinel_list->tail);
+  // New node -> Sentinel
+  TEST_ASSERT_EQUAL(sentinel_list->tail->prev, sentinel_list->head);
+  TEST_ASSERT_EQUAL(sentinel_list->tail->next, sentinel_list->head);
+
+  // Append second item (testing shifting and pointers)
+  bool item_appended2 = list_append(list, newNode2);
+  // Sentinel -> New node
   TEST_ASSERT_EQUAL(sentinel_list->head->prev, sentinel_list->tail);
   // New node -> Sentinel
   TEST_ASSERT_EQUAL(sentinel_list->tail->next, sentinel_list->head);
-  // TEST_ASSERT_EQUAL(sentinel_list->tail->prev, sentinel_list->head);
-
-  printf("Head: %p, New Tail: %p", list->lists.sentinel_list->head,
-         list->lists.sentinel_list->tail);
+  // Sentinel !(->) New Node
+  TEST_ASSERT_NOT_EQUAL(sentinel_list->head->next, sentinel_list->tail);
+  // New Node !(->) Sentinel
+  TEST_ASSERT_NOT_EQUAL(sentinel_list->tail->prev, sentinel_list->head);
 
   // Cleanup
   list_destroy(list, free_element);
@@ -87,7 +94,7 @@ void test_append(void) {
   sentinel_list = NULL;
   newNode = NULL;
 }
-//
+
 // // FIXME: Be sure to use real nodes here
 // void test_insert(void) {
 //   int test_element_2 = 2;
@@ -175,6 +182,20 @@ void test_append(void) {
 //   list = NULL;
 // }
 
+void test_list_is_empty(void) {
+  List *list = list_create(LIST_LINKED_SENTINEL);
+  Node *newNode = malloc(sizeof(Node));
+
+  // Test remove fails
+  TEST_ASSERT_TRUE(list_is_empty(list));
+  list_append(list, newNode);
+  TEST_ASSERT_FALSE(list_is_empty(list));
+
+  // Cleanup
+  list_destroy(list, free_element);
+  list = NULL;
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_list_create);
@@ -186,5 +207,6 @@ int main(void) {
   // RUN_TEST(test_get_out_of_bounds);
   // RUN_TEST(test_remove);
   // RUN_TEST(test_remove_out_of_bounds);
+  RUN_TEST(test_list_is_empty);
   return UNITY_END();
 }
