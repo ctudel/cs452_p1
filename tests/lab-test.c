@@ -95,22 +95,34 @@ void test_append(void) {
   newNode = NULL;
 }
 
-// // FIXME: Be sure to use real nodes here
-// void test_insert(void) {
-//   int test_element_2 = 2;
-//   List *list = list_create(LIST_LINKED_SENTINEL);
-//   list_append(list, &test_element);
-//
-//   // Test insert correctly shifts the list elements and stores the
-//   // value at the given index
-//   bool insertedElement = list_insert(list, 0, &test_element_2);
-//   TEST_ASSERT_TRUE(insertedElement);
-//   TEST_ASSERT_EQUAL_INT(2, list_get(list, 0));
-//
-//   // Cleanup
-//   list_destroy(list, free_list_or_element);
-//   list = NULL;
-// }
+void test_insert(void) {
+  int test_element_2 = 2;
+  List *list = list_create(LIST_LINKED_SENTINEL);
+  SentinelLinkedList *sentinel_list = list->lists.sentinel_list;
+  Node *newNode = malloc(sizeof(Node));
+
+  // Test insert stores the node at the given index
+  bool insertedElement = list_insert(list, 0, newNode);
+  TEST_ASSERT_TRUE(insertedElement);
+  // Sentinel -> New node
+  TEST_ASSERT_EQUAL(sentinel_list->head->next, sentinel_list->tail);
+  TEST_ASSERT_EQUAL(sentinel_list->head->prev, sentinel_list->tail);
+  // New node -> Sentinel
+  TEST_ASSERT_EQUAL(sentinel_list->head->next, sentinel_list->tail);
+  TEST_ASSERT_EQUAL(sentinel_list->head->prev, sentinel_list->tail);
+
+  // Test insert shifts the list correctly and stores the node
+  Node *newNode2 = malloc(sizeof(Node));
+  bool insertedElement2 = list_insert(list, 0, newNode2);
+  TEST_ASSERT_TRUE(insertedElement2);
+  TEST_ASSERT_NOT_EQUAL(sentinel_list->head->next, sentinel_list->tail);
+  TEST_ASSERT_EQUAL(sentinel_list->head->next, sentinel_list->tail->prev);
+
+  // Cleanup
+  list_destroy(list, free_element);
+  sentinel_list = NULL;
+  list = NULL;
+}
 //
 // void test_insert_out_of_bounds(void) {
 //   List *list = list_create(LIST_LINKED_SENTINEL);
@@ -201,7 +213,7 @@ int main(void) {
   RUN_TEST(test_list_create);
   RUN_TEST(test_list_destroy);
   RUN_TEST(test_append);
-  // RUN_TEST(test_insert);
+  RUN_TEST(test_insert);
   // RUN_TEST(test_insert_out_of_bounds);
   // RUN_TEST(test_get_element);
   // RUN_TEST(test_get_out_of_bounds);
