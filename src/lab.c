@@ -48,9 +48,6 @@ size_t sentinel_list_size(SentinelLinkedList *sentinel_list) {
 }
 
 void *sentinel_list_get(SentinelLinkedList *sentinel_list, size_t index) {
-  // Index bounds check
-  if (!index_in_bounds(sentinel_list_size(sentinel_list), index))
-    return NULL;
 
   // Start at tail or head based on which is closest
   // (unnecessary for small sets of data)
@@ -68,6 +65,10 @@ void *sentinel_list_get(SentinelLinkedList *sentinel_list, size_t index) {
     currNode = nextNode;
     currIdx += (nodeIsCloseToTail) ? -1 : 1;
     nextNode = currNode->next;
+
+    // Index bounds check
+    if (!index_in_bounds(sentinel_list_size(sentinel_list), currIdx))
+      break;
   }
 
   // Check index was found
@@ -151,7 +152,7 @@ bool sentinel_list_append(SentinelLinkedList *sentinel_list, void *data) {
 bool sentinel_list_insert(SentinelLinkedList *sentinel_list, size_t index,
                           void *data) {
   // Index is out of bounds
-  if (!index_in_bounds(sentinel_list_size(sentinel_list), index))
+  if (index < 0 || index > sentinel_list_size(sentinel_list))
     return false;
 
   Node *nodeAtGivenIndex = sentinel_list_get(sentinel_list, index);
@@ -178,7 +179,7 @@ bool sentinel_list_insert(SentinelLinkedList *sentinel_list, size_t index,
 
 void *sentinel_list_remove(SentinelLinkedList *sentinel_list, size_t index) {
   // Index is out of bounds
-  if (index > sentinel_list_size(sentinel_list) - 1 || index < 0)
+  if (!index_in_bounds(sentinel_list_size(sentinel_list), index))
     return NULL;
 
   Node *nodeAtGivenIndex = sentinel_list_get(sentinel_list, index);
