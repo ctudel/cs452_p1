@@ -123,76 +123,120 @@ void test_insert(void) {
   sentinel_list = NULL;
   list = NULL;
 }
-//
-// void test_insert_out_of_bounds(void) {
-//   List *list = list_create(LIST_LINKED_SENTINEL);
-//
-//   // Expected to fail (due to out of bounds)
-//   bool insertedElement = list_insert(list, 1, &test_element);
-//   TEST_ASSERT_FALSE(insertedElement);
-//
-//   // Cleanup
-//   list_destroy(list, free_list_or_element);
-//   list = NULL;
-// }
-//
-// void test_get_element(void) {
-//   List *list = list_create(LIST_LINKED_SENTINEL);
-//   list_append(list, &test_element);
-//
-//   // Test item retrieval
-//   void *element = list_get(list, 0);
-//   TEST_ASSERT_NOT_NULL(element);
-//
-//   // Cleanup
-//   list_destroy(list, free_list_or_element);
-//   list = NULL;
-// }
-//
-// void test_get_out_of_bounds(void) {
-//   List *list = list_create(LIST_LINKED_SENTINEL);
-//   list_append(list, &test_element);
-//
-//   // Test item retrieval fails (out of bounds)
-//   void *element = list_get(list, 1);
-//   TEST_ASSERT_NULL(element);
-//
-//   // Cleanup
-//   list_destroy(list, free_list_or_element);
-//   list = NULL;
-// }
-//
-// void test_remove(void) {
-//   List *list = list_create(LIST_LINKED_SENTINEL);
-//   list_append(list, &test_element);
-//   list_append(list, &test_element);
-//
-//   // Test removing items + list shifts accordingly
-//   bool first_item_removed = list_remove(list, 0);
-//   bool second_item_removed = list_remove(list, 0);
-//   bool non_existent_item_removed = list_remove(list, 0); // no item should
-//   exist
-//
-//   TEST_ASSERT_TRUE(first_item_removed);
-//   TEST_ASSERT_TRUE(second_item_removed);
-//   TEST_ASSERT_FALSE(non_existent_item_removed);
-//
-//   // Cleanup
-//   list_destroy(list, free_list_or_element);
-//   list = NULL;
-// }
-//
-// void test_remove_out_of_bounds(void) {
-//   List *list = list_create(LIST_LINKED_SENTINEL);
-//
-//   // Test remove fails
-//   bool non_existent_item_removed = list_remove(list, 0); // no item should
-//   exist TEST_ASSERT_FALSE(non_existent_item_removed);
-//
-//   // Cleanup
-//   list_destroy(list, free_list_or_element);
-//   list = NULL;
-// }
+
+void test_insert_out_of_bounds(void) {
+  List *list = list_create(LIST_LINKED_SENTINEL);
+  Node *newNode = malloc(sizeof(Node));
+
+  // Expected to fail (due to out of bounds)
+  bool insertedElement = list_insert(list, 1, newNode);
+  TEST_ASSERT_FALSE(insertedElement);
+
+  // Cleanup
+  list_destroy(list, free_element);
+  free(newNode);
+  list = NULL;
+  newNode = NULL;
+}
+
+void test_get_element(void) {
+  List *list = list_create(LIST_LINKED_SENTINEL);
+  Node *node1 = malloc(sizeof(Node));
+  Node *node2 = malloc(sizeof(Node));
+  list_append(list, node1);
+  list_append(list, node2);
+
+  // Test item retrieval
+  void *foundNode1 = list_get(list, 0);
+  void *foundNode2 = list_get(list, 1);
+  TEST_ASSERT_NOT_NULL(foundNode1);
+  TEST_ASSERT_NOT_NULL(foundNode2);
+  TEST_ASSERT_EQUAL(node1, foundNode1);
+  TEST_ASSERT_EQUAL(node2, foundNode2);
+
+  // Cleanup
+  list_destroy(list, free_element);
+  node1 = node2 = NULL;
+  list = NULL;
+}
+
+void test_get_out_of_bounds(void) {
+  List *list = list_create(LIST_LINKED_SENTINEL);
+  Node *node1 = malloc(sizeof(Node));
+  list_append(list, node1);
+
+  // Test item retrieval
+  void *outOfBoundsNode = list_get(list, 1);
+  TEST_ASSERT_NULL(outOfBoundsNode);
+
+  // Cleanup
+  list_destroy(list, free_element);
+  node1 = NULL;
+  list = NULL;
+}
+
+void test_remove(void) {
+  List *list = list_create(LIST_LINKED_SENTINEL);
+  Node *node1 = malloc(sizeof(Node));
+  Node *node2 = malloc(sizeof(Node));
+  Node *node3 = malloc(sizeof(Node));
+  list_append(list, node1);
+  list_append(list, node2);
+  list_append(list, node3);
+
+  // Test removing items + list shifts accordingly
+  void *first_item_removed = list_remove(list, 0);  // removes node 1
+  void *second_item_removed = list_remove(list, 1); // removes node 3
+  void *third_item_removed = list_remove(list, 0);  // removes node 2
+
+  TEST_ASSERT_NOT_NULL(first_item_removed);
+  TEST_ASSERT_NOT_NULL(second_item_removed);
+  TEST_ASSERT_NOT_NULL(third_item_removed);
+  TEST_ASSERT_EQUAL(node1, first_item_removed);
+  TEST_ASSERT_EQUAL(node3, second_item_removed);
+  TEST_ASSERT_EQUAL(node2, third_item_removed);
+
+  // Cleanup
+  free(node1);
+  free(node2);
+  free(node3);
+  list_destroy(list, free_element);
+  list = NULL;
+  node1 = node2 = node3 = first_item_removed = second_item_removed =
+      third_item_removed = NULL;
+}
+
+void test_remove_out_of_bounds(void) {
+  List *list = list_create(LIST_LINKED_SENTINEL);
+  SentinelLinkedList *sentinel_list = list->lists.sentinel_list;
+  Node *newNode = malloc(sizeof(Node));
+  list_append(list, newNode);
+
+  printf("\nHead: %p \nNode: %p\n", sentinel_list->head, newNode);
+
+  // Test remove fails
+  void *non_existent_item_removed = list_remove(list, 1);
+  printf("\nRemoved: %p", non_existent_item_removed);
+
+  void *item_removed = list_remove(list, 0);
+  printf("\nRemoved: %p", item_removed);
+  printf("\nNew Tail: %p, New Head %p, Updated Size: %zu", sentinel_list->head,
+         sentinel_list->tail, sentinel_list->size);
+
+  void *non_existent_item_removed_2 = list_remove(list, 0);
+  printf("\nRemoved: %p\n", non_existent_item_removed_2);
+
+  TEST_ASSERT_NULL(non_existent_item_removed);
+  TEST_ASSERT_NOT_NULL(item_removed);
+  TEST_ASSERT_NULL(non_existent_item_removed_2);
+
+  // Cleanup
+  list_destroy(list, free_element);
+  free(item_removed);
+  list = NULL;
+  item_removed = non_existent_item_removed_2 = non_existent_item_removed =
+      newNode = NULL;
+}
 
 void test_list_is_empty(void) {
   List *list = list_create(LIST_LINKED_SENTINEL);
@@ -214,11 +258,11 @@ int main(void) {
   RUN_TEST(test_list_destroy);
   RUN_TEST(test_append);
   RUN_TEST(test_insert);
-  // RUN_TEST(test_insert_out_of_bounds);
-  // RUN_TEST(test_get_element);
-  // RUN_TEST(test_get_out_of_bounds);
-  // RUN_TEST(test_remove);
-  // RUN_TEST(test_remove_out_of_bounds);
+  RUN_TEST(test_insert_out_of_bounds);
+  RUN_TEST(test_get_element);
+  RUN_TEST(test_get_out_of_bounds);
+  RUN_TEST(test_remove);
+  RUN_TEST(test_remove_out_of_bounds);
   RUN_TEST(test_list_is_empty);
   return UNITY_END();
 }
