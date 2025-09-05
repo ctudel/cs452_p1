@@ -212,17 +212,9 @@ void test_remove_out_of_bounds(void) {
   Node *newNode = malloc(sizeof(Node));
   list_append(list, newNode);
 
-  printf("\nHead: %p \nNode: %p\n", sentinel_list->head, newNode);
-
-  // Test remove fails
+// Test remove fails
   void *non_existent_item_removed = list_remove(list, 1);
-  printf("\nRemoved: %p", non_existent_item_removed);
-
   void *item_removed = list_remove(list, 0);
-  printf("\nRemoved: %p", item_removed);
-  printf("\nNew Tail: %p, New Head %p, Updated Size: %zu", sentinel_list->head,
-         sentinel_list->tail, sentinel_list->size);
-
   void *non_existent_item_removed_2 = list_remove(list, 0);
   printf("\nRemoved: %p\n", non_existent_item_removed_2);
 
