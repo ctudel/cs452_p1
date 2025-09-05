@@ -39,6 +39,44 @@ void free_element(void *data_ptr) {
   free(node);
 }
 
+bool index_in_bounds(size_t size, size_t index) {
+  return (index < size && index >= 0);
+}
+
+size_t sentinel_list_size(SentinelLinkedList *sentinel_list) {
+  return sentinel_list->size;
+}
+
+void *sentinel_list_get(SentinelLinkedList *sentinel_list, size_t index) {
+  // Index bounds check
+  if (!index_in_bounds(sentinel_list_size(sentinel_list), index))
+    return NULL;
+
+  // Start at tail or head based on which is closest
+  // (unnecessary for small sets of data)
+  bool nodeIsCloseToTail = index > (sentinel_list->size / 2); // index > middle
+  int currIdx = (nodeIsCloseToTail) ? sentinel_list->size - 1
+                                    : -1; // (-1) accounts for sentinel
+  Node *currNode =
+      (nodeIsCloseToTail) ? sentinel_list->tail : sentinel_list->head;
+  Node *nextNode = currNode->next;
+
+  // Find node at given index
+  // (List is empty || index within bounds)
+  while (currIdx != index) {
+    // ? shift backward : shift forward
+    currNode = nextNode;
+    currIdx += (nodeIsCloseToTail) ? -1 : 1;
+    nextNode = currNode->next;
+  }
+
+  // Check index was found
+  if (currIdx != index)
+    return NULL;
+
+  return currNode;
+}
+
 /*
  * TODO: Document
  */
@@ -113,48 +151,56 @@ bool sentinel_list_append(SentinelLinkedList *sentinel_list, void *data) {
 bool sentinel_list_insert(SentinelLinkedList *sentinel_list, size_t index,
                           void *data) {
   // Index is out of bounds
-  if (index > sentinel_list->size || index < 0)
+  if (!index_in_bounds(sentinel_list_size(sentinel_list), index))
     return false;
 
-  // Start at tail or head based on which is closest
-  // (unnecessary for small sets of data)
-  bool nodeIsCloseToTail = index > (sentinel_list->size / 2); // index > middle
-  int currIdx = (nodeIsCloseToTail) ? sentinel_list->size - 1 : -1;
-  Node *currNode =
-      (nodeIsCloseToTail) ? sentinel_list->tail : sentinel_list->head;
-  Node *nextNode = currNode->next;
-
-  // Find node at given index
-  // (List is empty || index within bounds)
-  while (currIdx != index) {
-    // ? shift backward : shift forward
-    currNode = nextNode;
-    currIdx += (nodeIsCloseToTail) ? -1 : 1;
-  }
-
-  // Check index was found
-  if (currIdx != index)
+  Node *nodeAtGivenIndex = sentinel_list_get(sentinel_list, index);
+  // Node was not found
+  if (!nodeAtGivenIndex)
     return false;
 
   Node *newNode = (Node *)data;
-  Node *oldPrev = currNode->prev;
-  // Curr Node Prev <-> New Node
+  Node *oldPrev = nodeAtGivenIndex->prev;
+  // Found Node Prev <-> New Node
   newNode->prev = oldPrev;
   oldPrev->next = newNode;
-  // New Node <-> Curr Node
-  newNode->next = currNode;
-  currNode->prev = newNode;
+  // New Node <-> Found Node
+  newNode->next = nodeAtGivenIndex;
+  nodeAtGivenIndex->prev = newNode;
 
   // Update list data as needed
   sentinel_list->tail =
-      (sentinel_list->size == 0) ? newNode : sentinel_list->tail;
+      (sentinel_list_size(sentinel_list) == 0) ? newNode : sentinel_list->tail;
   sentinel_list->size += 1;
 
   return true;
 }
 
-size_t sentinel_list_size(SentinelLinkedList *sentinel_list) {
-  return sentinel_list->size;
+void *sentinel_list_remove(SentinelLinkedList *sentinel_list, size_t index) {
+  // Index is out of bounds
+  if (index > sentinel_list_size(sentinel_list) - 1 || index < 0)
+    return NULL;
+
+  Node *nodeAtGivenIndex = sentinel_list_get(sentinel_list, index);
+  // Node was not found
+  if (!nodeAtGivenIndex)
+    return NULL;
+
+  // "Remove" node at given index
+  Node *prevOfFoundNode = nodeAtGivenIndex->prev;
+  Node *nextOfFoundNode = nodeAtGivenIndex->next;
+  // Prev of Node to Remove <-> Next of Node to Remove
+  prevOfFoundNode->next = nextOfFoundNode;
+  nextOfFoundNode->prev = prevOfFoundNode;
+
+  // Update list data as needed
+  sentinel_list->size -= 1;
+  if (nodeAtGivenIndex == sentinel_list->tail)
+    sentinel_list->tail = prevOfFoundNode;
+
+  // NOTE: Function returns pointer, so maybe don't clean
+  // (avoids dangling pointer)
+  return nodeAtGivenIndex;
 }
 
 /*
@@ -166,7 +212,7 @@ size_t sentinel_list_size(SentinelLinkedList *sentinel_list) {
 List *list_create(ListType type) {
   List *list = NULL; // could remain null
 
-  // List can have multiple implementations -- find by type
+  // List may have multiple implementations -- assume find by type
   switch (type) {
   case LIST_LINKED_SENTINEL:
     list = sentinel_list_create();
@@ -197,6 +243,20 @@ bool list_insert(List *list, size_t index, void *data) {
   }
 }
 
+void *list_remove(List *list, size_t index) {
+  switch (list->type) {
+  case LIST_LINKED_SENTINEL:
+    return sentinel_list_remove(list->lists.sentinel_list, index);
+  }
+}
+
+void *list_get(const List *list, size_t index) {
+  switch (list->type) {
+  case LIST_LINKED_SENTINEL:
+    return sentinel_list_get(list->lists.sentinel_list, index);
+  }
+}
+
 size_t list_size(const List *list) {
   switch (list->type) {
   case LIST_LINKED_SENTINEL:
@@ -207,6 +267,6 @@ size_t list_size(const List *list) {
 bool list_is_empty(const List *list) {
   switch (list->type) {
   case LIST_LINKED_SENTINEL:
-    return list->lists.sentinel_list->size == 0;
+    return sentinel_list_size(list->lists.sentinel_list) == 0;
   }
 };
