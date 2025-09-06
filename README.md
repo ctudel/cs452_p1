@@ -1,71 +1,16 @@
-# Makefile Project Template
+# Project 1 - Simple Linked List
 
-This is a simple Makefile project template that can be used to build, test, and
-debug C projects. It includes support for debug builds, sanitizers, and code
-coverage.
+- Name: Chris Tudela
+- Email: christudela@u.boisestate.edu
+- Class: 452-002
 
-## Tools and Dependencies
+## Known Bugs or Issues
 
-- GNU Make
-- GCC or Clang
-- Address Sanitizer (ASan) for memory error detection
-- gcov and lcov for code coverage
-- gcovr for generating coverage reports
-- pandoc for generating docx reports (optional)
+No known bugs, but it is possible that I missed some edge cases I didn't think to test for.
 
-## Test Harness
+## Experience
 
-This project uses the Unity Test Framework for unit testing. Refer to the
-[Unity Getting Started Guide](https://github.com/ThrowTheSwitch/Unity/blob/master/docs/UnityGettingStartedGuide.md) for more information on how to write and run tests.
+This project was a great refresher for pointers and the dynamics of managing memory. Some of my breakthroughs involved re-learning what exactly pointers are (references or copies?) and managing the memory (addresses). This definitely introduced some struggles, especially with dynamic behavior like the list_destroy function. Cleaning all the nodes and the list(s) was challenging to do without memory leaks. It was mostly because I decided to manage a tail, which slightly paid off if the list ever gets large, but will hardly make a difference and should've probably excluded that functionality. Not to say that it works any differently, the implementation still respects the sentinel node -- it just introduced, probably, unnecessary struggle. 
 
-## Example Usage
+Not necessarily a struggle, but I've been working in Typescript for the past year and it was interesting to see all the cross-over when typing. I noticed that Typescript inherited a lot of principles of C, where interfaces are basically structs, and many more elements. In other words, there were new discoveries for me when dealing with type checks and creations in C. I thought it was a great intro project and is definitely one that got me back up to speed -- hopefully enough to be ready for the next projects.
 
-To build the project run:
-
-```bash
-make release
-```
-To run the executable:
-
-```bash
-./build/release/myapp
-```
-
-To run the unit tests:
-
-```bash
-make check
-```
-
-To see all the configurations, run `make help`
-
-```bash
-Usage: make [target]
-Available targets:
-  debug     - Build the application in debug mode (default)
-  release   - Build the application in release mode
-  test      - Build the unit tests
-  all       - Builds debug, release, and test targets
-  check     - Run tests and check results
-  report    - Generate coverage report after running tests
-  leak      - Check for memory leaks in debug mode
-  clean     - Remove build artifacts
-  print     - Print build variables for MakeFile debugging
-  help      - Show this help message
-```
-
-## VS Code Integration
-
-This project is designed to work well with Visual Studio Code. Configurations
-for debugging the application and unit tests are provided. Read about how to
-use the debugger in the [VS Code documentation](https://code.visualstudio.com/docs/editor/debugging).
-
-## Features
-
-- Build targets for debug and release modes
-- Support for Address Sanitizer (ASan)
-- Code coverage support and report generation
-- Simple structure for organizing source files and build artifacts
-
-
-![AI](docs/ai.png)
