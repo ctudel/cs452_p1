@@ -113,11 +113,11 @@ void test_insert(void) {
   int test_element_2 = 2;
   List *list = list_create(LIST_LINKED_SENTINEL);
   SentinelLinkedList *sentinel_list = list->lists.sentinel_list;
-  Node *newNode = malloc(sizeof(Node));
-  newNode->type = NODE;
+  Node *node1 = malloc(sizeof(Node));
+  node1->type = NODE;
 
   // Test insert stores the node at the given index
-  bool insertedElement = list_insert(list, 0, newNode);
+  bool insertedElement = list_insert(list, 0, node1);
   TEST_ASSERT_TRUE(insertedElement);
   // Sentinel -> New node
   TEST_ASSERT_EQUAL(sentinel_list->head->next, sentinel_list->tail);
@@ -127,17 +127,27 @@ void test_insert(void) {
   TEST_ASSERT_EQUAL(sentinel_list->head->prev, sentinel_list->tail);
 
   // Test insert shifts the list correctly and stores the node
-  Node *newNode2 = malloc(sizeof(Node));
-  newNode2->type = NODE;
-  bool insertedElement2 = list_insert(list, 0, newNode2);
+  // sentinel->node2->node1
+  Node *node2 = malloc(sizeof(Node));
+  node2->type = NODE;
+  bool insertedElement2 = list_insert(list, 0, node2);
   TEST_ASSERT_TRUE(insertedElement2);
   TEST_ASSERT_NOT_EQUAL(sentinel_list->head->next, sentinel_list->tail);
   TEST_ASSERT_EQUAL(sentinel_list->head->next, sentinel_list->tail->prev);
 
+  // sentinel->node2->node3->node1
+  Node *node3 = malloc(sizeof(Node));
+  node3->type = NODE;
+  bool insertedElement3 = list_insert(list, 1, node3);
+  TEST_ASSERT_TRUE(insertedElement2);
+  TEST_ASSERT_NOT_EQUAL(sentinel_list->head->next, node3);
+  TEST_ASSERT_EQUAL(node2->next, node3);
+  TEST_ASSERT_EQUAL(node3->next, node1);
+
   // Append a non-node item
   bool non_node_appended = list_append(list, &test_element);
   TEST_ASSERT_FALSE(non_node_appended);
-  TEST_ASSERT_EQUAL(2, list->lists.sentinel_list->size);
+  TEST_ASSERT_EQUAL(3, list->lists.sentinel_list->size);
 
   // Cleanup
   list_destroy(list, free_node);
